@@ -26,6 +26,12 @@
 
 <br>
 
+<h2>See it in action</h2>
+
+<p align="center"><img src="demo/demo.gif" alt="Terminal recording of RAG Knowledge Base Agent running on Google Gemini" width="100%"></p>
+
+<p align="center"><sub>Recorded from a real run on Google Gemini (<code>gemini-3.5-flash</code>) on 12 November 2026. Nothing is edited or scripted. Only the waiting time while the model thinks is shortened. <a href="demo/demo.mp4">Download the MP4</a>.</sub></p>
+
 <h2>The problem</h2>
 
 <p>Company knowledge lives in policies, handbooks and help docs that nobody can search quickly. Generic chatbots answer confidently from what they already know, which is not your policy.</p>
@@ -110,19 +116,76 @@ python ask.py
 
 <pre>
 rag-knowledge-base-agent/
-  .env.example        # copy to .env and add your key
-  ask.py              # question and answer chat
-  build_index.py      # builds the vector index
-  case_study.md       # longer write-up of the design
+  .env.example                                           # copy to .env and add your key
+  ask.py                                                 # question and answer chat
+  build_index.py                                         # builds the vector index
+  case_study.md                                          # longer write-up of the design
   README.md
-  requirements.txt    # dependencies
+  requirements.txt                                       # dependencies
+  .git/
+    COMMIT_EDITMSG
+    config
+    description
+    HEAD
+    hooks/applypatch-msg.sample
+    hooks/commit-msg.sample
+    hooks/fsmonitor-watchman.sample
+    hooks/post-update.sample
+    hooks/pre-applypatch.sample
+    hooks/pre-commit.sample
+    hooks/pre-merge-commit.sample
+    hooks/pre-push.sample
+    hooks/pre-rebase.sample
+    hooks/pre-receive.sample
+    hooks/prepare-commit-msg.sample
+    hooks/push-to-checkout.sample
+    hooks/sendemail-validate.sample
+    hooks/update.sample
+    index
+    info/exclude
+    logs/HEAD
+    logs/refs/heads/main
+    logs/refs/remotes/origin/main
+    objects/0d/19a37d674a332b9dba9f34ec54f3144a81a21f
+    objects/12/88821c81d3d64a429d61e6159f3218166314ea
+    objects/18/004352a129397c3f4d2fe0ee4b76af55d6fda5
+    objects/21/2fffe9b8501a836e93af9f6ed74307c137a83e
+    objects/22/61de0576de55ab0166471018afa46a53e45d3d
+    objects/32/a5a168939b8fb1ec689a6f9e84ccd5f0d4b73e
+    objects/47/3070d02e45554f30e249cae5d33234db9f0fa6
+    objects/78/998da0758f803a8b7d9b492206632524003f81
+    objects/7a/3a4f0ab20b8170a7b714479283340f5fe09e10
+    objects/7c/546a57758c1178c4c98fae1068264fff86b11f
+    objects/8f/8b8931f8f6472d4c2b6923be797d1004b904b3
+    objects/9a/d085a746f26e8591da976001e4c1598c5a1a0d
+    objects/a1/10ce744d6c7ed8760da0b7e3ab5c79ca098577
+    objects/a2/667477f906e25e4d46862b73a0cf1d10163a78
+    objects/a3/621309df9f627f285cc3c11a052426cc1313ed
+    objects/a5/3a6d356111eaaab97288368fc2051e158d4929
+    objects/a8/7d854a7b9e8db4f5c1b2db59cc35853a602f87
+    objects/bb/1d0d20270c6b562a687dd6c5e21f3c4d7ba090
+    objects/bc/99adf171611781b0177021c5f2d4330bdd6d28
+    objects/c3/794db7d19a5dfea2c3748af35affc2cf49d2e1
+    objects/c5/4aeb32cf364cf433dfb7c8ce58583bc231b3a2
+    objects/c5/97c23fa30e7a1e2dfac8278bb520f879e325c9
+    objects/c9/3467f14da5a9bf8021b5eedbbd4b015f83633a
+    objects/df/f173a640827c6933a74a716399dacd4a35b9cd
+    objects/e6/9de29bb2d1d6434b8b29ae775ad8c2e48c5391
+    objects/f0/94451ffb3b4caef3115ea6284799e216c88009
+    objects/f2/37867b3ae68278b061d93e6d7e9954cfa1c1e6
+    objects/fd/945af9ffb57dac2ee8d9117758e6a079e787a0
+    refs/heads/main
+    refs/remotes/origin/main
   agent/
-    ingest.py         # loading, chunking and local embeddings
-    llm.py            # picks the model from LLM_MODEL
-    query.py          # retrieval and the answer prompt
+    ingest.py                                            # loading, chunking and local embeddings
+    llm.py                                               # picks the model from LLM_MODEL
+    query.py                                             # retrieval and the answer prompt
   data/
-    documents/        # sample policies, replace with your own
-  tests/              # pytest suite, runs without any API key
+    documents/                                           # sample policies, replace with your own
+  demo/
+    demo.gif
+    demo.mp4
+  tests/                                                 # pytest suite, runs without any API key
 </pre>
 
 <h2>Built with</h2>
