@@ -36,14 +36,16 @@ def answer_question(question: str, k: int = 4, model: str | None = None, llm=Non
     results = vectorstore.similarity_search(question, k=k)
 
     if not results:
-        return {"answer": "I don't have any documents indexed yet.", "sources": [], "chunks_used": 0}
+        return {"answer": "I don't have any documents indexed yet.", "sources": [], "chunks_used": 0, "passages": []}
 
     context_blocks = []
     sources = []
+    passages = []
     for doc in results:
         source_name = Path(doc.metadata.get("source", "unknown")).name
         context_blocks.append(f"[Source: {source_name}]\n{doc.page_content}")
         sources.append(source_name)
+        passages.append({"source": source_name, "text": doc.page_content})
 
     context = "\n\n---\n\n".join(context_blocks)
     llm = llm or get_llm(model)
@@ -58,4 +60,7 @@ def answer_question(question: str, k: int = 4, model: str | None = None, llm=Non
         "answer": response.text,
         "sources": sorted(set(sources)),
         "chunks_used": len(results),
+        # The exact text the answer was written from, in retrieval order,
+        # so a UI can show the evidence next to the answer.
+        "passages": passages,
     }

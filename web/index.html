@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG Knowledge Base Agent</title>
+<style>
+  :root {
+    --bg: #fbfaf7; --surface: #fff; --side: #f4f2ec; --line: #e7e3d9; --line-2: #efece4;
+    --text: #23211c; --muted: #6f6a5e; --faint: #a39e91;
+    --brand: #2f7d5b; --brand-2: #256a4c; --brand-soft: #e6f2ec;
+    --hl: #fff3c4; --hl-line: #f0c94a; --warn: #a15c00; --warn-bg: #fff1d6; --bad: #b42318;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--text); font: 14.5px/1.55 "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif; display: flex; overflow: hidden; }
+  button { font: inherit; cursor: pointer; }
+
+  .side { width: 250px; flex: none; background: var(--side); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 16px 12px; gap: 4px; overflow-y: auto; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 15.5px; padding: 0 6px 14px; }
+  .brand .mark { width: 30px; height: 30px; border-radius: 8px; background: var(--brand); display: grid; place-items: center; }
+  .side h4 { margin: 10px 6px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); }
+  .doc { display: flex; gap: 9px; align-items: flex-start; padding: 8px 9px; border-radius: 8px; border: 0; background: none; text-align: left; color: var(--text); width: 100%; }
+  .doc:hover { background: #ebe8df; }
+  .doc.on { background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+  .doc svg { flex: none; margin-top: 2px; }
+  .doc b { font-weight: 550; font-size: 13.5px; display: block; }
+  .doc span { font-size: 11.5px; color: var(--muted); }
+  .doc.cited b::after { content: "cited"; font-size: 10.5px; font-weight: 650; color: var(--brand); background: var(--brand-soft); border-radius: 5px; padding: 0 5px; margin-left: 6px; }
+  .index { margin-top: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; font-size: 12.5px; color: var(--muted); }
+  .index b { color: var(--text); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .index b i { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
+  .index b i.ok { background: #2f9e44; }
+  .index .btn { margin-top: 8px; width: 100%; }
+
+  .center { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .center-head { padding: 16px 26px 12px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px; }
+  .center-head h1 { margin: 0; font-size: 18px; letter-spacing: -.01em; }
+  .center-head .sub { color: var(--muted); font-size: 12.5px; }
+  .spacer { flex: 1; }
+  .pill { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; white-space: nowrap; display: inline-flex; gap: 6px; align-items: center; background: var(--surface); }
+  .pill i { width: 7px; height: 7px; border-radius: 50%; background: #2f9e44; }
+  .thread { flex: 1; overflow-y: auto; padding: 18px 26px; scroll-behavior: smooth; }
+  .welcome { max-width: 560px; margin: 30px auto 0; text-align: center; color: var(--muted); }
+  .welcome h2 { color: var(--text); font-size: 21px; margin: 12px 0 6px; letter-spacing: -.01em; }
+  .q { display: flex; justify-content: flex-end; margin: 6px 0 10px; }
+  .q div { background: var(--brand); color: #fff; border-radius: 14px 14px 4px 14px; padding: 9px 14px; max-width: 75%; animation: in .25s ease; }
+  @keyframes in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+  .a { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 13px 16px; margin: 0 0 18px; max-width: 92%; cursor: pointer; transition: border-color .2s, box-shadow .2s; animation: in .3s ease; }
+  .a.on { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+  .a .txt { white-space: pre-wrap; }
+  .cite { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--brand); background: var(--brand-soft); border-radius: 6px; padding: 0 7px; margin: 0 2px; white-space: nowrap; vertical-align: 1px; cursor: pointer; }
+  .cite:hover { background: #d3eadf; }
+  .a .meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line-2); font-size: 12px; color: var(--muted); }
+  .badge { font-size: 11.5px; font-weight: 650; border-radius: 6px; padding: 1px 8px; }
+  .badge.ok { color: var(--brand); background: var(--brand-soft); }
+  .badge.no { color: var(--warn); background: var(--warn-bg); }
+  .a .meta .secs { margin-left: auto; }
+  .thinking { display: inline-flex; gap: 10px; align-items: center; color: var(--brand); background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 11px 15px; margin-bottom: 18px; font-size: 13.5px; }
+  .spin { width: 13px; height: 13px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: rot .7s linear infinite; }
+  @keyframes rot { to { transform: rotate(360deg); } }
+  .err { color: var(--bad); background: #fdecea; border-radius: 12px; padding: 10px 14px; margin-bottom: 18px; }
+  .composer { padding: 10px 26px 18px; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 11px; font-size: 12.5px; color: var(--muted); }
+  .chip:hover { border-color: var(--brand); color: var(--brand); }
+  .chip:disabled { opacity: .5; cursor: default; }
+  .box { display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 6px 6px 6px 14px; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+  .box input { flex: 1; border: 0; outline: 0; font: inherit; background: transparent; color: var(--text); min-width: 0; }
+  .btn { border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 9px; padding: 7px 13px; font-weight: 550; font-size: 13px; }
+  .btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .btn.primary:hover { background: var(--brand-2); }
+  .btn:disabled { opacity: .55; cursor: default; }
+
+  .right { width: 400px; flex: none; border-left: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; min-height: 0; }
+  .tabs { display: flex; gap: 2px; padding: 12px 14px 0; border-bottom: 1px solid var(--line); }
+  .tab { border: 0; background: none; padding: 8px 12px; border-bottom: 2px solid transparent; color: var(--muted); font-weight: 600; font-size: 13px; }
+  .tab.on { color: var(--text); border-bottom-color: var(--brand); }
+  .pane { flex: 1; overflow-y: auto; padding: 14px 16px 24px; }
+  .hint { color: var(--muted); font-size: 13px; border: 1.5px dashed var(--line); border-radius: 12px; padding: 16px; }
+  .passage { border: 1px solid var(--line); border-radius: 11px; margin-bottom: 10px; overflow: hidden; animation: in .3s ease; }
+  .passage-head { display: flex; gap: 8px; align-items: center; padding: 7px 11px; background: #faf8f3; border-bottom: 1px solid var(--line-2); font-size: 12px; }
+  .passage-head .n { font-weight: 700; color: var(--brand); }
+  .passage-head .src { font-weight: 600; cursor: pointer; }
+  .passage-head .src:hover { text-decoration: underline; }
+  .passage-head .used { margin-left: auto; font-size: 11px; color: var(--faint); }
+  .passage .body { padding: 9px 11px; font-size: 12.5px; white-space: pre-wrap; color: #3d3a33; max-height: 170px; overflow-y: auto; }
+  .docview h1, .docview h2, .docview h3 { margin: 14px 0 6px; line-height: 1.3; letter-spacing: -.01em; }
+  .docview h1 { font-size: 19px; margin-top: 0; } .docview h2 { font-size: 15.5px; } .docview h3 { font-size: 14px; }
+  .docview .ln { padding: 1px 8px; margin: 0 -8px; border-left: 3px solid transparent; font-size: 13.5px; white-space: pre-wrap; }
+  .docview .ln.li { padding-left: 22px; text-indent: -12px; }
+  .docview .hl { background: var(--hl); border-left-color: var(--hl-line); }
+  .docview .gap { height: 8px; }
+  .docname { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .docname b { color: var(--text); }
+
+  @media (max-width: 1150px) { .right { width: 330px; } .side { width: 210px; } }
+  @media (max-width: 860px) {
+    body { flex-direction: column; overflow: auto; }
+    .side { width: auto; flex-direction: row; flex-wrap: wrap; padding: 12px 16px; }
+    .side h4, .index { display: none; }
+    .doc { width: auto; }
+    .brand { width: 100%; padding-bottom: 6px; }
+    .center { min-height: 70vh; }
+    .center-head, .thread, .composer { padding-left: 16px; padding-right: 16px; }
+    .right { width: auto; border-left: 0; border-top: 1px solid var(--line); min-height: 420px; }
+  }
+</style>
+</head>
+<body>
+<aside class="side">
+  <div class="brand"><div class="mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M4 4.5A2.5 2.5 0 016.5 2H20v17H6.5a1 1 0 000 2H20v1H6.5A2.5 2.5 0 014 19.5zM8 6v2h8V6z"/></svg></div>Company handbook</div>
+  <h4>Documents</h4>
+  <div id="docs"></div>
+  <div class="index">
+    <b><i id="idx-dot"></i><span id="idx-title">Vector index</span></b>
+    <div id="idx-sub">Local Chroma index, embeddings run on this machine</div>
+    <button class="btn" id="rebuild" type="button">Rebuild index</button>
+  </div>
+</aside>
+
+<main class="center">
+  <div class="center-head">
+    <div><h1>Ask the handbook</h1><div class="sub">Answers come only from the documents on the left, with a source for every claim.</div></div>
+    <span class="spacer"></span>
+    <span class="pill"><i></i><span id="model">model</span></span>
+  </div>
+  <div class="thread" id="thread">
+    <div class="welcome" id="welcome">
+      <svg width="46" height="46" viewBox="0 0 24 24" fill="#c9c3b3"><path d="M4 4.5A2.5 2.5 0 016.5 2H20v17H6.5a1 1 0 000 2H20v1H6.5A2.5 2.5 0 014 19.5zM8 6v2h8V6z"/></svg>
+      <h2>What do you want to know?</h2>
+      <div>Ask about returns, shipping or remote work. Ask about something the documents don't cover and the agent says so instead of guessing.</div>
+    </div>
+  </div>
+  <div class="composer">
+    <div class="chips" id="chips">
+      <button class="chip">What's the return window?</button>
+      <button class="chip">Do you ship to Canada?</button>
+      <button class="chip">Can I work remote 5 days a week?</button>
+      <button class="chip">Do you accept crypto payments?</button>
+    </div>
+    <form class="box" id="form" autocomplete="off">
+      <input id="input" placeholder="Ask a question about the company documents" maxlength="1000">
+      <button class="btn primary" id="send" type="submit">Ask</button>
+    </form>
+  </div>
+</main>
+
+<aside class="right">
+  <div class="tabs"><button class="tab on" data-tab="evidence">Evidence</button><button class="tab" data-tab="document">Document</button></div>
+  <div class="pane" id="pane"><div class="hint">After you ask a question, the passages the agent retrieved from the index appear here, in the order it found them. Those passages are all the model sees.</div></div>
+</aside>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const DOC_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="#8a8473"><path d="M6 2h8l6 6v14H6zm7 1.5V9h5.5zM9 13h6v1.5H9zm0 3.5h6V18H9z"/></svg>';
+  let docs = [], answers = [], current = null, tab = "evidence", docOpen = null, busy = false;
+
+  function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function words(t) { return t.split(/\s+/).filter(Boolean).length; }
+
+  function renderDocs() {
+    const box = $("docs"); box.innerHTML = "";
+    const cited = current ? current.cited : new Set();
+    docs.forEach((d) => {
+      const b = el("button", "doc" + (docOpen === d.name && tab === "document" ? " on" : "") + (cited.has(d.name) ? " cited" : ""));
+      b.innerHTML = DOC_ICON;
+      const t = el("div"); t.append(el("b", null, d.name), el("span", null, words(d.text) + " words"));
+      b.appendChild(t);
+      b.addEventListener("click", () => openDoc(d.name));
+      box.appendChild(b);
+    });
+  }
+
+  function setTab(t) { tab = t; document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("on", x.dataset.tab === t)); renderPane(); renderDocs(); }
+  function openDoc(name) { docOpen = name; setTab("document"); }
+
+  function renderPane() {
+    const pane = $("pane"); pane.innerHTML = ""; pane.scrollTop = 0;
+    if (tab === "evidence") {
+      if (!current) { pane.appendChild(el("div", "hint", "After you ask a question, the passages the agent retrieved from the index appear here, in the order it found them. Those passages are all the model sees.")); return; }
+      const intro = el("div", "docname"); intro.append("Retrieved for: ", el("b", null, "“" + current.question + "”"));
+      pane.appendChild(intro);
+      current.passages.forEach((p, i) => {
+        const card = el("div", "passage");
+        const h = el("div", "passage-head");
+        const src = el("span", "src", p.source); src.addEventListener("click", () => openDoc(p.source));
+        h.append(el("span", "n", "#" + (i + 1)), src, el("span", "used", current.sources.length && current.cited.has(p.source) ? "cited in the answer" : "retrieved, not cited"));
+        card.append(h, el("div", "body", p.text));
+        pane.appendChild(card);
+      });
+      return;
+    }
+    const d = docs.find((x) => x.name === docOpen) || docs[0];
+    if (!d) return;
+    docOpen = d.name;
+    const nm = el("div", "docname"); nm.innerHTML = DOC_ICON; nm.append(el("b", null, d.name));
+    if (current && current.passages.some((p) => p.source === d.name)) nm.append(" · highlighted lines were retrieved for your last question");
+    pane.appendChild(nm);
+    // Highlight every line that falls inside a retrieved passage from this document.
+    const ranges = [];
+    if (current) current.passages.filter((p) => p.source === d.name).forEach((p) => { const i = d.text.indexOf(p.text); if (i >= 0) ranges.push([i, i + p.text.length]); });
+    const view = el("div", "docview");
+    let pos = 0, firstHl = null;
+    d.text.split("\n").forEach((line) => {
+      const start = pos, end = pos + line.length; pos = end + 1;
+      const hl = line.trim() && ranges.some(([a, b]) => start < b && end > a);
+      const m = /^(#{1,3})\s+(.*)$/.exec(line);
+      let node;
+      if (!line.trim()) node = el("div", "gap");
+      else if (m) node = el("h" + m[1].length, "ln", m[2]);
+      else if (/^\s*[-*]\s+/.test(line)) node = el("div", "ln li", "• " + line.replace(/^\s*[-*]\s+/, "").replace(/\*\*/g, ""));
+      else node = el("div", "ln", line.replace(/\*\*/g, ""));
+      if (hl) { node.classList.add("hl"); if (!firstHl) firstHl = node; }
+      view.appendChild(node);
+    });
+    pane.appendChild(view);
+    if (firstHl) setTimeout(() => firstHl.scrollIntoView({ block: "center", behavior: "smooth" }), 60);
+  }
+
+  function answerNode(a) {
+    const n = el("div", "a");
+    const txt = el("div", "txt");
+    // Turn "(source: file.md)" citations into clickable chips.
+    const re = /\((?:source|sources):\s*([^)]+)\)/gi;
+    let last = 0, m;
+    while ((m = re.exec(a.answer))) {
+      txt.append(a.answer.slice(last, m.index).replace(/\s+$/, " "));
+      m[1].split(/,\s*/).forEach((f) => {
+        const name = f.trim(); a.cited.add(name);
+        const c = el("span", "cite", name); c.addEventListener("click", (e) => { e.stopPropagation(); select(a); openDoc(name); });
+        txt.appendChild(c);
+      });
+      last = re.lastIndex;
+    }
+    txt.append(a.answer.slice(last));
+    n.appendChild(txt);
+    const meta = el("div", "meta");
+    const refused = !a.cited.size && /don.t have|do not have|not (?:mentioned|covered|included)|no information/i.test(a.answer);
+    if (refused) meta.appendChild(el("span", "badge no", "Not in the documents, so no guess"));
+    else meta.appendChild(el("span", "badge ok", "Grounded in " + (a.cited.size || a.sources.length) + " document" + ((a.cited.size || a.sources.length) === 1 ? "" : "s")));
+    meta.append(el("span", null, a.chunks_used + (a.chunks_used === 1 ? " passage" : " passages") + " retrieved"), el("span", "secs", a.seconds + "s"));
+    n.appendChild(meta);
+    n.addEventListener("click", () => { select(a); setTab("evidence"); });
+    a.node = n;
+    return n;
+  }
+
+  function select(a) { current = a; answers.forEach((x) => x.node && x.node.classList.toggle("on", x === a)); renderDocs(); }
+
+  function lock(v) { busy = v; $("send").disabled = v; $("rebuild").disabled = v; document.querySelectorAll(".chip").forEach((c) => (c.disabled = v)); }
+
+  async function ask(question) {
+    question = question.trim();
+    if (!question || busy) return;
+    lock(true);
+    const w = $("welcome"); if (w) w.remove();
+    const thread = $("thread");
+    const q = el("div", "q"); q.appendChild(el("div", null, question)); thread.appendChild(q);
+    const think = el("div", "thinking"); think.append(el("span", "spin"), "Searching the documents and writing an answer..."); thread.appendChild(think);
+    thread.scrollTop = thread.scrollHeight;
+    $("input").value = "";
+    try {
+      const res = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Request failed (" + res.status + ")");
+      const a = { ...data, question, cited: new Set() };
+      answers.push(a);
+      think.replaceWith(answerNode(a));
+      select(a); setTab("evidence");
+      setIndex(true);
+    } catch (err) {
+      think.replaceWith(el("div", "err", err.message));
+    } finally {
+      lock(false);
+      thread.scrollTop = thread.scrollHeight;
+      $("input").focus();
+    }
+  }
+
+  function setIndex(built, text) {
+    $("idx-dot").className = built ? "ok" : "";
+    $("idx-title").textContent = built ? "Vector index ready" : "Index not built yet";
+    if (text) $("idx-sub").textContent = text;
+  }
+
+  $("form").addEventListener("submit", (e) => { e.preventDefault(); ask($("input").value); });
+  $("chips").addEventListener("click", (e) => { const c = e.target.closest(".chip"); if (c) ask(c.textContent); });
+  document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => setTab(t.dataset.tab)));
+  $("rebuild").addEventListener("click", async () => {
+    if (busy) return;
+    lock(true); $("idx-title").textContent = "Rebuilding...";
+    try {
+      const res = await fetch("/api/index", { method: "POST" });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      setIndex(true, d.chunks + " chunks from " + docs.length + " documents, built in " + d.seconds + "s");
+    } catch (err) { setIndex(false, err.message); }
+    lock(false);
+  });
+
+  fetch("/api/info").then((r) => r.json()).then((d) => {
+    $("model").textContent = d.model;
+    setIndex(d.index_built, (d.index_built ? "" : "Builds automatically on the first question. ") + "Embeddings: " + d.embeddings + ", run locally");
+  }).catch(() => {});
+  fetch("/api/documents").then((r) => r.json()).then((d) => { docs = d; renderDocs(); }).catch(() => {});
+})();
+</script>
+</body>
+</html>

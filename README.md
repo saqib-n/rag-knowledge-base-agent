@@ -28,9 +28,11 @@
 
 <h2>See it in action</h2>
 
-<p align="center"><img src="demo/demo.gif" alt="Terminal recording of RAG Knowledge Base Agent running on Google Gemini" width="100%"></p>
+<p align="center"><img src="demo/demo.gif" alt="Help centre screen: answers with clickable sources, the retrieved passages, and the source document with the used lines highlighted" width="100%"></p>
 
-<p align="center"><sub>Recorded from a real run on Google Gemini (<code>gemini-3.5-flash</code>) on 12 November 2026. Nothing is edited or scripted. Only the waiting time while the model thinks is shortened. <a href="demo/demo.mp4">Download the MP4</a>.</sub></p>
+<p align="center"><sub>Recorded in the built-in help centre from a real run on Google Gemini (<code>gemini-3.1-flash-lite</code>) on 14 November 2026. Nothing is scripted. Only the time spent waiting for the model is fast-forwarded, and the real response times are shown on screen. <a href="demo/demo.mp4">Download the MP4</a>.</sub></p>
+
+<p>Run <code>python app.py</code> and it opens a help centre where answers link to their sources, with the exact passages the answer was built from and the source document highlighted. It is the same agent code as the command line version, with a screen on top.</p>
 
 <h2>The problem</h2>
 
@@ -97,6 +99,7 @@ pip install -r requirements.txt
 python build_index.py       # no API key needed
 cp .env.example .env        # on Windows: copy .env.example .env
 # open .env and paste your API key
+python app.py               # opens the help centre at http://localhost:8000
 python ask.py
 </pre>
 
@@ -119,6 +122,7 @@ rag-knowledge-base-agent/
   .env.example        # copy to .env and add your key
   ask.py              # question and answer chat
   build_index.py      # builds the vector index
+  app.py            # browser help centre, the same agent with a UI
   case_study.md       # longer write-up of the design
   README.md
   requirements.txt    # dependencies
@@ -128,8 +132,10 @@ rag-knowledge-base-agent/
     query.py          # retrieval and the answer prompt
   data/
     documents/        # sample policies, replace with your own
-  demo/               # recording of a live run (GIF and MP4)
+  demo/               # recording of a live run (GIF, MP4 and a screenshot)
   tests/              # pytest suite, runs without any API key
+  web/
+    index.html          # the help centre, one file, no build step
 </pre>
 
 <h2>Built with</h2>
@@ -143,7 +149,7 @@ pip install -r requirements-dev.txt
 pytest
 </pre>
 
-<p>Three tests cover document loading, rebuilding the index without duplicates, and answers coming back with their sources. They use a stand-in embedding model, so nothing is downloaded. None of the tests call a model or need an API key, so they run on GitHub Actions on every push. The badge at the top shows the latest result.</p>
+<p>Four tests cover document loading, rebuilding the index without duplicates, and answers coming back with their sources. They use a stand-in embedding model, so nothing is downloaded, plus the browser screen and its API. None of the tests call a model or need an API key, so they run on GitHub Actions on every push. The badge at the top shows the latest result.</p>
 
 <h2>Roadmap</h2>
 
